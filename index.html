@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Discovering Bessel's Correction</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #ffffff;
+      color: #1f2937;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .intro {
+      color: #606873;
+      margin-bottom: 24px;
+    }
+
+    .section {
+      margin: 24px 0;
+    }
+
+    .divider {
+      border: 0;
+      border-top: 1px solid #d7dbe0;
+      margin: 28px 0;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+
+    button {
+      min-height: 44px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      border: 1px solid #bfc5cc;
+      background: white;
+      color: #1f2937;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #f4f5f6;
+    }
+
+    button.primary {
+      background: #e8eef9;
+      border-color: #9aaed0;
+    }
+
+    select {
+      min-height: 44px;
+      border-radius: 8px;
+      border: 1px solid #bfc5cc;
+      padding: 8px 12px;
+      background: white;
+    }
+
+    .label {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .muted {
+      color: #606873;
+    }
+
+    .values {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-height: 42px;
+    }
+
+    .population-value,
+    .sample-value {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c9ced4;
+      border-radius: 50%;
+    }
+
+    .population-value {
+      width: 38px;
+      height: 38px;
+      font-size: 14px;
+    }
+
+    .sample-value {
+      min-width: 46px;
+      height: 46px;
+      padding: 0 8px;
+      font-weight: 600;
+    }
+
+    .population-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-top: 12px;
+      font-size: 15px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .card {
+      border: 1px solid #d4d8dd;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .card-label {
+      color: #606873;
+      font-size: 14px;
+    }
+
+    .big-number {
+      margin-top: 4px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .samples-count {
+      margin-top: 14px;
+    }
+
+    .result-row {
+      margin: 20px 0;
+    }
+
+    .result-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .scale {
+      position: relative;
+      height: 18px;
+      border-radius: 9px;
+      background: #edf0f2;
+    }
+
+    .true-line {
+      position: absolute;
+      width: 2px;
+      height: 28px;
+      top: -5px;
+      background: #222;
+    }
+
+    .marker {
+      position: absolute;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+    }
+
+    .marker-n {
+      background: #c46b52;
+    }
+
+    .marker-n1 {
+      background: #4f7c8a;
+    }
+
+    .legend {
+      margin-top: 12px;
+      text-align: center;
+      color: #606873;
+      font-size: 13px;
+    }
+
+    .legend-line {
+      display: inline-block;
+      width: 2px;
+      height: 18px;
+      vertical-align: middle;
+      background: #222;
+      margin-right: 6px;
+    }
+
+    .observation {
+      margin-top: 14px;
+      text-align: center;
+      font-weight: 600;
+      min-height: 24px;
+    }
+
+    /* EXPLANATION TABS */
+
+    .explanation-card {
+      border: 1px solid #d4d8dd;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fafafa;
+      margin-top: 30px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid #d4d8dd;
+    }
+
+    .tab {
+      min-height: 52px;
+      border: 0;
+      border-radius: 0;
+      background: #ffffff;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab + .tab {
+      border-left: 1px solid #d4d8dd;
+    }
+
+    .tab.active {
+      background: #e8eef9;
+    }
+
+    .tab-panel {
+      padding: 18px;
+    }
+
+    .tab-panel p {
+      margin: 10px 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* DEVIATION DEMO */
+
+    .deviation-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .deviation-item {
+      text-align: center;
+      font-size: 13px;
+      color: #606873;
+    }
+
+    .deviation-item input,
+    .forced-value {
+      width: 100%;
+      min-height: 44px;
+      margin-top: 5px;
+      border: 1px solid #c9ced4;
+      border-radius: 8px;
+      background: #ffffff;
+      text-align: center;
+      color: #1f2937;
+      font-size: 16px;
+    }
+
+    .forced-value {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      background: #f0f2f4;
+    }
+
+    .equation {
+      text-align: center;
+      margin: 12px 0;
+      font-size: 16px;
+    }
+
+    .note {
+      padding: 12px 18px;
+      border-top: 1px solid #d4d8dd;
+      color: #606873;
+      font-size: 13px;
+      background: #ffffff;
+    }
+
+    @media (max-width: 650px) {
+      body {
+        padding: 16px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .deviation-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .result-label {
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .tabs {
+        grid-template-columns: 1fr;
+      }
+
+      .tab + .tab {
+        border-left: 0;
+        border-top: 1px solid #d4d8dd;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+
+    <h1>Discovering Bessel's Correction</h1>
+
+    <p class="intro">
+      Draw samples from a generated population and compare two ways of
+      calculating sample standard deviation.
+    </p>
+
+    <!-- POPULATION -->
+
+    <section class="section">
+
+      <div class="row">
+        <button id="generatePop" class="primary">
+          Generate New Population
+        </button>
+
+        <span class="muted">
+          30 randomly generated values
+        </span>
+      </div>
+
+      <div style="margin-top: 18px;">
+        <div class="label">Population</div>
+        <div id="population" class="values"></div>
+      </div>
+
+      <div class="population-stats">
+
+        <span>
+          Population mean:
+          <strong id="popMean"></strong>
+        </span>
+
+        <span>
+          Population standard deviation:
+          <strong id="popSD"></strong>
+        </span>
+
+      </div>
+
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ONE SAMPLE -->
+
+    <section class="section">
+
+      <div class="row">
+
+        <label for="sampleSize">
+          <strong>Sample size:</strong>
+        </label>
+
+        <select id="sampleSize">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+        </select>
+
+        <button id="drawSample">
+          Draw One Sample
+        </button>
+
+      </div>
+
+      <div style="margin-top: 18px;">
+
+        <div class="label">
+          Current Sample
+        </div>
+
+        <div id="sample" class="values"></div>
+
+      </div>
+
+      <div class="cards">
+
+        <div class="card">
+
+          <div class="card-label">
+            Standard deviation using n
+          </div>
+
+          <div id="oneN" class="big-number">
+            —
+          </div>
+
+        </div>
+
+        <div class="card">
+
+          <div class="card-label">
+            Standard deviation using n − 1
+          </div>
+
+          <div id="oneN1" class="big-number">
+            —
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <hr class="divider" />
+
+    <!-- REPEATED SAMPLING -->
+
+    <section class="section">
+
+      <div class="row">
+
+        <button id="run10">
+          +10 Samples
+        </button>
+
+        <button id="run100" class="primary">
+          +100 Samples
+        </button>
+
+        <button id="reset">
+          Reset Samples
+        </button>
+
+      </div>
+
+      <div class="samples-count">
+
+        Samples drawn:
+        <strong id="count">0</strong>
+
+      </div>
+
+      <div class="result-row">
+
+        <div class="result-label">
+
+          <span>
+            Average sample SD using n
+          </span>
+
+          <strong id="avgN">
+            —
+          </strong>
+
+        </div>
+
+        <div class="scale">
+
+          <div
+            id="trueLine1"
+            class="true-line">
+          </div>
+
+          <div
+            id="dotN"
+            class="marker marker-n">
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="result-row">
+
+        <div class="result-label">
+
+          <span>
+            Average sample SD using n − 1
+          </span>
+
+          <strong id="avgN1">
+            —
+          </strong>
+
+        </div>
+
+        <div class="scale">
+
+          <div
+            id="trueLine2"
+            class="true-line">
+          </div>
+
+          <div
+            id="dotN1"
+            class="marker marker-n1">
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="legend">
+
+        <span class="legend-line"></span>
+
+        True population standard deviation
+
+      </div>
+
+      <div
+        id="observation"
+        class="observation">
+      </div>
+
+    </section>
+
+    <!-- EXPLANATION -->
+
+    <section class="explanation-card">
+
+      <div
+        class="tabs"
+        role="tablist"
+        aria-label="Bessel's correction explanation">
+
+        <button
+          id="tabWhyN"
+          class="tab active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panelWhyN">
+
+          Why does n underestimate spread?
+
+        </button>
+
+        <button
+          id="tabWhyN1"
+          class="tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panelWhyN1">
+
+          Why n − 1?
+
+        </button>
+
+      </div>
+
+      <!-- WHY N UNDERESTIMATES -->
+
+      <div
+        id="panelWhyN"
+        class="tab-panel"
+        role="tabpanel"
+        aria-labelledby="tabWhyN">
+
+        <p>
+          When we only have a sample, we do not know the true
+          population mean, so we calculate the
+          <strong>sample mean</strong> from the observations themselves.
+        </p>
+
+        <p>
+          That mean is positioned to fit that particular sample.
+          As a result, the observations tend to be
+          <strong>closer to their own sample mean</strong>
+          than they are to the true population mean.
+        </p>
+
+        <p>
+          So the squared deviations — and therefore the measured spread —
+          tend to be too small.
+        </p>
+
+        <p>
+          Dividing by <strong>n − 1</strong> instead of
+          <strong>n</strong> makes the estimate larger to compensate.
+        </p>
+
+      </div>
+
+      <!-- WHY N MINUS 1 -->
+
+      <div
+        id="panelWhyN1"
+        class="tab-panel hidden"
+        role="tabpanel"
+        aria-labelledby="tabWhyN1">
+
+        <p>
+          Once the sample mean is known, the deviations from that mean
+          must add to <strong>0</strong>.
+        </p>
+
+        <p>
+          Try changing the first four deviations below.
+        </p>
+
+        <div class="deviation-grid">
+
+          <label class="deviation-item">
+
+            Deviation 1
+
+            <input
+              id="dev1"
+              type="number"
+              value="2" />
+
+          </label>
+
+          <label class="deviation-item">
+
+            Deviation 2
+
+            <input
+              id="dev2"
+              type="number"
+              value="-1" />
+
+          </label>
+
+          <label class="deviation-item">
+
+            Deviation 3
+
+            <input
+              id="dev3"
+              type="number"
+              value="4" />
+
+          </label>
+
+          <label class="deviation-item">
+
+            Deviation 4
+
+            <input
+              id="dev4"
+              type="number"
+              value="-3" />
+
+          </label>
+
+          <div class="deviation-item">
+
+            Deviation 5
+
+            <div
+              id="dev5"
+              class="forced-value">
+              -2
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="equation">
+
+          <strong id="devEquation">
+            2 − 1 + 4 − 3 − 2 = 0
+          </strong>
+
+        </div>
+
+        <p>
+          Notice that the fifth deviation is
+          <strong>not free to vary</strong>.
+          Once the first four are chosen, the fifth value is forced
+          to be whatever makes the deviations add to zero.
+        </p>
+
+        <p>
+          With 5 observations, only
+          <strong>4 deviations are free to vary</strong>.
+        </p>
+
+        <p>
+          In general, <strong>n observations give n − 1 independent
+          deviations</strong>. This is why the denominator becomes n − 1.
+        </p>
+
+      </div>
+
+      <div class="note">
+
+        Bessel's correction makes the estimate of
+        <strong>variance</strong> unbiased.
+        After taking the square root to obtain standard deviation,
+        a small bias remains, but using n − 1 greatly reduces
+        the underestimation.
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+
+    const populationElement =
+      document.getElementById("population");
+
+    const sampleElement =
+      document.getElementById("sample");
+
+    const populationMeanElement =
+      document.getElementById("popMean");
+
+    const populationSDElement =
+      document.getElementById("popSD");
+
+    const oneNElement =
+      document.getElementById("oneN");
+
+    const oneN1Element =
+      document.getElementById("oneN1");
+
+    const countElement =
+      document.getElementById("count");
+
+    const averageNElement =
+      document.getElementById("avgN");
+
+    const averageN1Element =
+      document.getElementById("avgN1");
+
+    const dotN =
+      document.getElementById("dotN");
+
+    const dotN1 =
+      document.getElementById("dotN1");
+
+    const trueLine1 =
+      document.getElementById("trueLine1");
+
+    const trueLine2 =
+      document.getElementById("trueLine2");
+
+    const observation =
+      document.getElementById("observation");
+
+    const sampleSizeElement =
+      document.getElementById("sampleSize");
+
+
+    let population = [];
+
+    let populationMean = 0;
+
+    let populationSD = 0;
+
+    let sampleCount = 0;
+
+    let totalSDUsingN = 0;
+
+    let totalSDUsingNMinus1 = 0;
+
+
+    function mean(values) {
+
+      return (
+        values.reduce(
+          (sum, value) => sum + value,
+          0
+        ) / values.length
+      );
+
+    }
+
+
+    function format(value) {
+
+      return value.toFixed(2);
+
+    }
+
+
+    function generatePopulation() {
+
+      population = Array.from(
+        { length: 30 },
+        () =>
+          Math.floor(Math.random() * 16) + 5
+      );
+
+
+      populationMean =
+        mean(population);
+
+
+      const populationVariance =
+        population.reduce(
+
+          (sum, value) =>
+            sum +
+            Math.pow(
+              value - populationMean,
+              2
+            ),
+
+          0
+
+        ) / population.length;
+
+
+      populationSD =
+        Math.sqrt(populationVariance);
+
+
+      populationElement.innerHTML =
+        population
+          .map(
+            value =>
+              `<span class="population-value">${value}</span>`
+          )
+          .join("");
+
+
+      populationMeanElement.textContent =
+        format(populationMean);
+
+
+      populationSDElement.textContent =
+        format(populationSD);
+
+
+      resetRuns();
+
+      clearSample();
+
+      positionTrueLines();
+
+    }
+
+
+    function drawValues(sampleSize) {
+
+      return Array.from(
+
+        { length: sampleSize },
+
+        () =>
+          population[
+            Math.floor(
+              Math.random() *
+              population.length
+            )
+          ]
+
+      );
+
+    }
+
+
+    function calculateSampleStatistics(values) {
+
+      const sampleMean =
+        mean(values);
+
+
+      const sumSquaredDeviations =
+        values.reduce(
+
+          (sum, value) =>
+            sum +
+            Math.pow(
+              value - sampleMean,
+              2
+            ),
+
+          0
+
+        );
+
+
+      const sdUsingN =
+        Math.sqrt(
+          sumSquaredDeviations /
+          values.length
+        );
+
+
+      const sdUsingNMinus1 =
+        Math.sqrt(
+          sumSquaredDeviations /
+          (values.length - 1)
+        );
+
+
+      return {
+
+        sdUsingN,
+
+        sdUsingNMinus1
+
+      };
+
+    }
+
+
+    function showOneSample() {
+
+      const sampleSize =
+        Number(
+          sampleSizeElement.value
+        );
+
+
+      const values =
+        drawValues(sampleSize);
+
+
+      const stats =
+        calculateSampleStatistics(
+          values
+        );
+
+
+      sampleElement.innerHTML =
+        values
+          .map(
+            value =>
+              `<span class="sample-value">${value}</span>`
+          )
+          .join("");
+
+
+      oneNElement.textContent =
+        format(stats.sdUsingN);
+
+
+      oneN1Element.textContent =
+        format(
+          stats.sdUsingNMinus1
+        );
+
+    }
+
+
+    function clearSample() {
+
+      sampleElement.innerHTML =
+        '<span class="muted">Draw a sample to begin.</span>';
+
+
+      oneNElement.textContent =
+        "—";
+
+
+      oneN1Element.textContent =
+        "—";
+
+    }
+
+
+    function addSamples(
+      numberOfSamples
+    ) {
+
+      const sampleSize =
+        Number(
+          sampleSizeElement.value
+        );
+
+
+      for (
+        let i = 0;
+        i < numberOfSamples;
+        i++
+      ) {
+
+        const values =
+          drawValues(sampleSize);
+
+
+        const stats =
+          calculateSampleStatistics(
+            values
+          );
+
+
+        totalSDUsingN +=
+          stats.sdUsingN;
+
+
+        totalSDUsingNMinus1 +=
+          stats.sdUsingNMinus1;
+
+
+        sampleCount++;
+
+      }
+
+
+      updateRunningResults();
+
+    }
+
+
+    function updateRunningResults() {
+
+      countElement.textContent =
+        sampleCount.toLocaleString();
+
+
+      if (sampleCount === 0) {
+
+        averageNElement.textContent =
+          "—";
+
+
+        averageN1Element.textContent =
+          "—";
+
+
+        dotN.style.display =
+          "none";
+
+
+        dotN1.style.display =
+          "none";
+
+
+        observation.textContent =
+          "";
+
+
+        return;
+
+      }
+
+
+      const averageN =
+        totalSDUsingN /
+        sampleCount;
+
+
+      const averageNMinus1 =
+        totalSDUsingNMinus1 /
+        sampleCount;
+
+
+      averageNElement.textContent =
+        format(averageN);
+
+
+      averageN1Element.textContent =
+        format(
+          averageNMinus1
+        );
+
+
+      const maximumScale =
+        populationSD * 1.6 || 1;
+
+
+      function position(value) {
+
+        return Math.max(
+
+          1,
+
+          Math.min(
+
+            99,
+
+            (
+              value /
+              maximumScale
+            ) * 100
+
+          )
+
+        );
+
+      }
+
+
+      dotN.style.left =
+        position(averageN) + "%";
+
+
+      dotN1.style.left =
+        position(
+          averageNMinus1
+        ) + "%";
+
+
+      dotN.style.display =
+        "block";
+
+
+      dotN1.style.display =
+        "block";
+
+
+      if (sampleCount < 20) {
+
+        observation.textContent =
+          "Keep drawing samples. The averages will begin to stabilize.";
+
+      }
+
+      else if (sampleCount < 100) {
+
+        observation.textContent =
+          "Watch which average settles closer to the population standard deviation.";
+
+      }
+
+      else {
+
+        const errorUsingN =
+          Math.abs(
+            averageN -
+            populationSD
+          );
+
+
+        const errorUsingNMinus1 =
+          Math.abs(
+            averageNMinus1 -
+            populationSD
+          );
+
+
+        if (
+          errorUsingNMinus1 <
+          errorUsingN
+        ) {
+
+          observation.textContent =
+            "The n − 1 estimate is settling closer to the true population standard deviation.";
+
+        }
+
+        else {
+
+          observation.textContent =
+            "Random samples fluctuate. Add more samples and watch the long-run pattern.";
+
+        }
+
+      }
+
+    }
+
+
+    function positionTrueLines() {
+
+      const maximumScale =
+        populationSD * 1.6 || 1;
+
+
+      const left =
+        Math.max(
+
+          1,
+
+          Math.min(
+
+            99,
+
+            (
+              populationSD /
+              maximumScale
+            ) * 100
+
+          )
+
+        );
+
+
+      trueLine1.style.left =
+        left + "%";
+
+
+      trueLine2.style.left =
+        left + "%";
+
+    }
+
+
+    function resetRuns() {
+
+      sampleCount =
+        0;
+
+
+      totalSDUsingN =
+        0;
+
+
+      totalSDUsingNMinus1 =
+        0;
+
+
+      updateRunningResults();
+
+    }
+
+
+    /* -------------------------
+       DEGREES OF FREEDOM DEMO
+       ------------------------- */
+
+    function updateDeviations() {
+
+      const values = [];
+
+
+      for (
+        let i = 1;
+        i <= 4;
+        i++
+      ) {
+
+        const value =
+          Number(
+            document
+              .getElementById(
+                "dev" + i
+              )
+              .value
+          );
+
+
+        values.push(
+          Number.isFinite(value)
+            ? value
+            : 0
+        );
+
+      }
+
+
+      const sumFirstFour =
+        values.reduce(
+          (sum, value) =>
+            sum + value,
+          0
+        );
+
+
+      const fifth =
+        -sumFirstFour;
+
+
+      document
+        .getElementById(
+          "dev5"
+        )
+        .textContent =
+          fifth;
+
+
+      const allValues = [
+        ...values,
+        fifth
+      ];
+
+
+      let equation =
+        "";
+
+
+      allValues.forEach(
+        (value, index) => {
+
+          if (index === 0) {
+
+            equation += value;
+
+          }
+
+          else if (value >= 0) {
+
+            equation +=
+              " + " + value;
+
+          }
+
+          else {
+
+            equation +=
+              " − " +
+              Math.abs(value);
+
+          }
+
+        }
+      );
+
+
+      equation +=
+        " = 0";
+
+
+      document
+        .getElementById(
+          "devEquation"
+        )
+        .textContent =
+          equation;
+
+    }
+
+
+    /* -------------------------
+       TABS
+       ------------------------- */
+
+    const tabWhyN =
+      document.getElementById(
+        "tabWhyN"
+      );
+
+
+    const tabWhyN1 =
+      document.getElementById(
+        "tabWhyN1"
+      );
+
+
+    const panelWhyN =
+      document.getElementById(
+        "panelWhyN"
+      );
+
+
+    const panelWhyN1 =
+      document.getElementById(
+        "panelWhyN1"
+      );
+
+
+    function showTab(tab) {
+
+      if (tab === "whyN") {
+
+        panelWhyN.classList.remove(
+          "hidden"
+        );
+
+
+        panelWhyN1.classList.add(
+          "hidden"
+        );
+
+
+        tabWhyN.classList.add(
+          "active"
+        );
+
+
+        tabWhyN1.classList.remove(
+          "active"
+        );
+
+
+        tabWhyN.setAttribute(
+          "aria-selected",
+          "true"
+        );
+
+
+        tabWhyN1.setAttribute(
+          "aria-selected",
+          "false"
+        );
+
+      }
+
+      else {
+
+        panelWhyN.classList.add(
+          "hidden"
+        );
+
+
+        panelWhyN1.classList.remove(
+          "hidden"
+        );
+
+
+        tabWhyN.classList.remove(
+          "active"
+        );
+
+
+        tabWhyN1.classList.add(
+          "active"
+        );
+
+
+        tabWhyN.setAttribute(
+          "aria-selected",
+          "false"
+        );
+
+
+        tabWhyN1.setAttribute(
+          "aria-selected",
+          "true"
+        );
+
+      }
+
+    }
+
+
+    /* -------------------------
+       EVENT LISTENERS
+       ------------------------- */
+
+    document
+      .getElementById(
+        "generatePop"
+      )
+      .addEventListener(
+        "click",
+        generatePopulation
+      );
+
+
+    document
+      .getElementById(
+        "drawSample"
+      )
+      .addEventListener(
+        "click",
+        showOneSample
+      );
+
+
+    document
+      .getElementById(
+        "run10"
+      )
+      .addEventListener(
+        "click",
+        () => addSamples(10)
+      );
+
+
+    document
+      .getElementById(
+        "run100"
+      )
+      .addEventListener(
+        "click",
+        () => addSamples(100)
+      );
+
+
+    document
+      .getElementById(
+        "reset"
+      )
+      .addEventListener(
+        "click",
+        resetRuns
+      );
+
+
+    sampleSizeElement
+      .addEventListener(
+        "change",
+        () => {
+
+          resetRuns();
+
+          clearSample();
+
+        }
+      );
+
+
+    tabWhyN.addEventListener(
+      "click",
+      () =>
+        showTab("whyN")
+    );
+
+
+    tabWhyN1.addEventListener(
+      "click",
+      () =>
+        showTab("whyN1")
+    );
+
+
+    for (
+      let i = 1;
+      i <= 4;
+      i++
+    ) {
+
+      document
+        .getElementById(
+          "dev" + i
+        )
+        .addEventListener(
+          "input",
+          updateDeviations
+        );
+
+    }
+
+
+    /* -------------------------
+       START
+       ------------------------- */
+
+    updateDeviations();
+
+    generatePopulation();
+
+  </script>
+
+</body>
+</html>
